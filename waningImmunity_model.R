@@ -12,9 +12,9 @@ run_ag_aoi_waningImmunity <- function(parms,  # General set of parameters
   gtd <- parms$gtd    # generation time distribution
   
   #detection rates
-  det_rates_nv <- parms$det_rates_nv
-  det_rates_v <- parms$det_rates_v
-  det_rates_b <- parms$det_rates_v
+  det_rates_nv <- parms$det_rates
+  det_rates_v <- parms$det_rates
+  det_rates_b <- parms$det_rates
   
   #severe rates
   sevp_rates_nv<-parms$sevp_rates_nv
@@ -28,8 +28,7 @@ run_ag_aoi_waningImmunity <- function(parms,  # General set of parameters
   
   d    <- length(parms$gtd) 
   ddet <- length(parms$Pdet)
-  dsev <- length(parms$Psevp)
-  
+
   # Efficacy profiles as function of time since vaccine/boost and age group
   effInfProfile <- parms$effInfProfile
   beffInfProfile <- parms$beffInfProfile
@@ -74,23 +73,22 @@ run_ag_aoi_waningImmunity <- function(parms,  # General set of parameters
     
     finf <- rowSums(sapply(1:m, function(k) Cij[[t-dv]][,k]/N[k]*sum(gtd[d:1]*infected[,k])))
     
-    infected_nv[t,] <- sus_nv*finf
-    infected_v[t,,] <- t((1-effInfProfile)*t(sus_v*finf))
-    infected_b[t,,] <- t((1-beffInfProfile)*t(sus_b*finf))
+    infected_nv[t,] <- pmax(0,sus_nv*finf)
+    infected_v[t,,] <- pmax(0,t((1-effInfProfile)*t(sus_v*finf)))
+    infected_b[t,,] <- pmax(0,t((1-beffInfProfile)*t(sus_b*finf)))
     
     # Detected & Severe 
     t1.det <- max(1,(t-ddet+1)):t
-    t1.sev <- max(1,(t-dsev+1)):t
     detected_nv[t,] <- rowSums(det_rates_nv*t(parms$Pdet[length(t1.det):1]*infected_nv[t1.det,]))
     for (j in 1:m) {
       detected_nv[t,j] <- detected_nv[t,j]+sum(det_rates_nv[j]*parms$Pdet[length(t1.det):1]*rowSums(infected_v[t1.det,j,1:(Tv1+Tv2-1)])) # Recently vaccinated are counted as non-vaccinated
       detected_v[t,j] <- sum(det_rates_v[j]*parms$Pdet[length(t1.det):1]*rowSums(infected_v[t1.det,j,(Tv1+Tv2):dv]))
       detected_b[t,j] <- sum(det_rates_b[j]*parms$Pdet[length(t1.det):1]*rowSums(infected_b[t1.det,j,1:dv])) 
     }
-    sevp_nv[t,] <- rowSums(sevp_rates_nv*t(parms$Psevp[length(t1.sev):1]*detected_nv[t1.sev,]))
-    sevp_v[t,] <- rowSums(sevp_rates_v*t(parms$Psevp[length(t1.sev):1]*detected_v[t1.sev,]))
-    sevp_b[t,] <-rowSums(sevp_rates_b*t(parms$Psevp[length(t1.sev):1]*detected_b[t1.sev,]))
-
+    sevp_nv[t,] <- (sevp_rates_nv*detected_nv[t,])
+    sevp_v[t,] <- (sevp_rates_v*detected_v[t,])
+    sevp_b[t,] <- (sevp_rates_b*detected_b[t,])
+    
     #Reff calculations
     detected[t,] <- detected_nv[t,]+detected_v[t,]+detected_b[t,]
     sus_aux <- (sus_nv+rowSums(t((1-effInfProfile))*sus_v)+rowSums(t((1-beffInfProfile))*sus_b))/N

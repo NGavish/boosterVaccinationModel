@@ -23,15 +23,12 @@ gather_parameters <- function() {
   m <- length(N)
   
   gtd <- discrete_gamma_dist(mean=4.0, sd=2.7, 14)   # generation time distribution
-  Pdet <- discrete_gamma_dist(mean=4.5, sd=2.4, 14)  # detection time distribution
-  Psevp <- discrete_gamma_dist(mean=4.5, sd=5, 21)     # detection to severe time distribution
-
-  det_rates_nv <- rep(0.5,m)
-  det_rates_v  <- rep(0.5,m)
+  Pdet <- discrete_gamma_dist(mean=3.5, sd=2.4, 14)  # detection time distribution
   
-  sevp_rates_nv <- c(0.0003,0.0004,0.0055,0.0160,0.0360,0.0722,0.1553,0.2713,0.4834)
-  sevp_rates_v <-  c(0.0000,0.0000,0.0005,0.0007,0.0026,0.0117,0.0332,0.0887,0.2264)
-  sevp_rates_b <-    c(0.0000,0.0000,0.0004,0.0006,0.0033,0.0055,0.0228,0.0588,0.1435)
+  # initial detection rates - to be fitted
+  det_rates <- rep(0.5,m)
+
+  death_rates_ifsev <- c(0.02, 0.00, 0.05, 0.07, 0.08, 0.14, 0.30, 0.37, 0.50) 
   
   # (age-dependent susceptibility and infectivity)
   infectivityFactor <- rep(1,m)   
@@ -51,7 +48,7 @@ gather_parameters <- function() {
   
   # Boost decays as vaccine
   bSeffTemporalprofile <- rep(0,dv)
-  VE0 <- SeffTemporalprofile[180]
+  VE0 <- SeffTemporalprofile[200]
   factor <- c(rep(2,6),seq(2,15),rep(15,14))
   bSeffTemporalprofile[1:34]<-1-(1-VE0)/factor
   bSeffTemporalprofile[35:dv] <- bSeffTemporalprofile[34]*SeffTemporalprofile[35:dv]/SeffTemporalprofile[35]
@@ -70,9 +67,8 @@ gather_parameters <- function() {
   recovered_known_nv <- c(110906,172612,161362,116646,97847,73210,47565,24320,16793)
   recovered_known_v <-  c(3,59,356,654,931,815,909,746,648)
 
-  return(list(N=N,m=m,ag_dist=ag_dist,ag_labels=ag_labels,gtd=gtd,Pdet=Pdet,Psevp=Psevp,
-  			  det_rates_nv=det_rates_nv,det_rates_v=det_rates_v,
-          sevp_rates_nv=sevp_rates_nv,sevp_rates_v=sevp_rates_v,sevp_rates_b=sevp_rates_b,
+  return(list(N=N,m=m,ag_dist=ag_dist,ag_labels=ag_labels,gtd=gtd,Pdet=Pdet,
+          det_rates=det_rates,death_rates_ifsev=death_rates_ifsev,
           susceptibilityFactor=susceptibilityFactor,infectivityFactor=infectivityFactor,
           Tv1=Tv1,Tv2=Tv2,Tv3=Tv3,dv=dv,
           effInfProfile=effInfProfile, beffInfProfile=beffInfProfileSlowWaning,
@@ -80,7 +76,6 @@ gather_parameters <- function() {
   			  recovered_known_nv=recovered_known_nv,recovered_known_v=recovered_known_v))
 }
 
-library(zoo)
 smooth_window <- function(dat, win_size) {
   zoo::rollapply(dat,FUN=mean,width=win_size,align="center")
 }
@@ -110,7 +105,7 @@ dates <-  simulationStartDate+(0:Tmax)
 
 
 detectedData <- readRDS('detected.RDS')
-severeData <- readRDS('severe.RDS') 
+severeData <- readRDS('severe.RDS')
 
 fit_data <- list()
 fit_data$detected_nv <- detectedData$nv
@@ -123,10 +118,15 @@ fit_data$severe_b <- severeData$b
 fitStartDate <- simulationStartDate 
 fitEndDate <- as.Date("2021-11-25") 
 
-fit_length <- as.numeric(fitEndDate-fitStartDate)
+fit_length <- as.numeric(fitEndDate-fitStartDate+1)
 fit_period <- 1:fit_length
 fit_dates <- fitStartDate+1:fit_length-1
 
+
+parms$sevp_rates_nv <- colSums(fit_data$severe_nv)/colSums(fit_data$detected_nv)
+parms$sevp_rates_v <- colSums(fit_data$severe_v)/colSums(fit_data$detected_v)
+parms$sevp_rates_b <- colSums(fit_data$severe_b)/colSums(fit_data$detected_b)
+parms$sevp_rates_b[1] <- 0
 
 ##############################################
 # Mobility data
@@ -183,7 +183,7 @@ remove_hidden_infections_from_schedules <- function(parms,vaccinationSchedule,bo
   # Estimate numbers of unknown recovered per age group, 
   # and reduce unknown recovered that were vaccinated from the vaccination schedule
   recovered_known   <- parms$recovered_known_nv+parms$recovered_known_v
-  recovered_overall <- parms$recovered_known_nv/parms$det_rates_nv + parms$recovered_known_v/parms$det_rates_v
+  recovered_overall <- recovered_known/parms$det_rates
   recovered_unknown <- recovered_overall-recovered_known
   hiddenPercent     <- recovered_unknown/(N-recovered_known)
   vaccinationSchedule <- t(t(vaccinationSchedule)*(1-hiddenPercent))
@@ -206,11 +206,11 @@ set_initial_conditions <- function(parms,vaccinationSchedule) {
   
   d <- length(parms$gtd)
   recovered_known   <- parms$recovered_known_nv+parms$recovered_known_v
-  recovered_overall <- parms$recovered_known_nv/parms$det_rates_nv + parms$recovered_known_v/parms$det_rates_v
+  recovered_overall <- recovered_known/parms$det_rates 
   recovered_unknown <- recovered_overall-recovered_known
   
-  i0_nv <- parms$i0_known_nv/parms$det_rates_nv
-  i0_v <- parms$i0_known_v/parms$det_rates_v
+  i0_nv <- parms$i0_known_nv/parms$det_rates
+  i0_v <- parms$i0_known_v/parms$det_rates
   
   S0_v <- matrix(0,dv,m)
   S0_v[1:(dv-1),] <- vaccinationSchedule[(dv-1):1,]
