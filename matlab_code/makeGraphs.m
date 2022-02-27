@@ -2,12 +2,12 @@
 close all;
 defineColors;
 pBoostColor=green;
-presentCalibratedModel=false; % Figure 1: Calibrated model outcomes vs actual data.
-presentBoosterSchedule=false; % Figure 2: Effect of waning and boosting.
-presentEffectOfTiming=false;  % Figure 3: Timing of boost start date.
-presentEffectOfBoost=false;   % Figure 6 (SM): Booster uptake in Israel.
-presentVaccineWaning=true;    % Figure 7: Estimates of vaccine waning profile.
-presentVEprofile=false;       % Figure 8: Vaccine efficacy profile from administration of first dose.
+presentCalibratedModel=true; % Figure 1: Calibrated model outcomes vs actual data.
+presentBoosterSchedule=true; % Figure 2: Effect of waning and boosting.
+presentEffectOfTiming=true;  % Figure 3: Timing of boost start date.
+presentEffectOfBoost=true;   % Figure 6 (SM): Booster uptake in Israel.
+presentVaccineWaning=true;   % Figure 7: Estimates of vaccine waning profile.
+presentVEprofile=true;       % Figure 8: Vaccine efficacy profile from administration of first dose.
 
 displaystartTime=datetime('1/7/2021','InputFormat','dd/MM/uuuu');
 displayendTime=datetime('15/11/2021','InputFormat','dd/MM/uuuu');
@@ -17,8 +17,8 @@ if presentCalibratedModel
 
     startTimeCalibration=datetime('1/7/2021','InputFormat','dd/MM/uuuu');displaystartTimeCalibration=startTimeCalibration;
     endTimeCalibration=datetime('14/11/2021','InputFormat','dd/MM/uuuu');
-    T = readtable('calibration.csv');
-    TdataByVacStatus = readtable('calibrationData.csv');
+    T = readtable('../calibration.csv');
+    TdataByVacStatus = readtable('../calibrationData.csv');
 
     t_layout = tiledlayout(2,1,'TileSpacing','Compact');
     t_detected = tiledlayout(1,3,'TileSpacing','Compact');
@@ -31,7 +31,7 @@ if presentCalibratedModel
     xlim([displaystartTimeCalibration displayendTime]);grid on;
     ax = gca;ax.YRuler.Exponent = 0;
     xtickformat('dd-MM')
-    ytickformat('%,4.0g');ylim([0 8500]);
+    ytickformat('%,4.0g');ylim([0 7500]);
     ylabel('New detected cases (# of people)',FontWeight='bold')
 
     ax2=nexttile(t_detected);
@@ -69,9 +69,7 @@ if presentCalibratedModel
     title(ax3,'Vaccinated with booster','FontWeight','normal','fontsize',12);%title(ax6,'Vaccinated with booster','FontWeight','normal','fontsize',12)
 
     set(gcf,'Position',[520 402 873 320])
-    print(['CalibratedModel',datestr(endTimeCalibration)],'-depsc');
-    print(['CalibratedModel',datestr(endTimeCalibration)],'-djpeg');
-
+    printGraph(['../graphs/CalibratedModel',datestr(endTimeCalibration)])
 end
 close all;
 %% presentBoosterSchedule
@@ -79,7 +77,7 @@ if presentBoosterSchedule
     colororder('default')
 
     subplot(3,3,[1 2 4 5])
-    T = readtable('EffectOfBoost.csv');
+    T = readtable('../EffectOfBoost.csv');
     plot(T.dates,100*cumsum(T.BoostData60)/1287420,LineWidth=1.5);hold on;
     h=plot(T.dates,100*cumsum(T.BoostData4059)/1471104,'--',LineWidth=1.5);hold on;
     plot(T.dates,100*cumsum(T.BoostData039)/1977213,'-.',LineWidth=1.5)
@@ -104,7 +102,7 @@ if presentBoosterSchedule
     ylabel('Portion of vaccinated who received a booster shot')
     set(gcf,'Position',[520 318 768 479])
 
-    print -depsc BoostSchedule
+    printGraph('../graphs/BoostSchedule')
 end
 close all;
 %% presentEffectOfBoost
@@ -119,7 +117,7 @@ if presentEffectOfBoost
     colororder(newcolors)
 
 
-    T = readtable('EffectOfBoost.csv');
+    T = readtable('../EffectOfBoost.csv');
 
     tiledlayout(3,1,'TileSpacing','tight')
     ax1=nexttile;
@@ -132,7 +130,7 @@ if presentEffectOfBoost
     xlim([displaystartTime displayendTime]);
     ax = gca;ax.YRuler.Exponent = 0;
     xtickformat('dd-MM')
-    MaxY=40000;ytickformat('%,4.0g');ylim([0 MaxY]);
+    MaxY=42500;ytickformat('%,4.0g');ylim([0 MaxY]);
     boosterStartTime=datetime('30/7/2021','InputFormat','dd/MM/uuuu');
     text(boosterStartTime,MaxY,{' Ages 60+',' eligible for Boost'},'VerticalAlignment','bottom','Rotation',-90)
     text(boosterStartTime+14,MaxY,' Ages 50+','VerticalAlignment','bottom','Rotation',-90)
@@ -162,7 +160,7 @@ if presentEffectOfBoost
     xlim([displaystartTime displayendTime]);
     ax = gca;ax.YRuler.Exponent = 0;
     xtickformat('dd-MM')
-    ytickformat('%,4.0g');ylim([0 800]);
+    ytickformat('%,4.0g');ylim([0 875]);
     ylabel('Number of cases');title('Daily number of new severe cases','fontsize',13)
     text(0.025,0.92,'B','FontSize',14,'Units','normalized')
 
@@ -203,13 +201,13 @@ if presentEffectOfBoost
 
     xlim([displaystartTime displayendTime]);
     ax = gca;ax.YRuler.Exponent = 0;
-    ytickformat('%,4.0g');ylim([0 150]);
+    ytickformat('%,4.0g');ylim([0 220]);
     set(gca,'xtick',boosterStartTime+[0,1,17,19,23,28,31,45,61,75,92,106,122],'XTickLabel', []);
-
+    set(gca,'ytick',[0 50 100 150])
     grid on
     shg
 
-    printGraph('EffectOfBoost');
+    printGraph('../graphs/EffectOfBoost');
 
     close
     colororder('default')
@@ -218,7 +216,7 @@ close all;
 if presentEffectOfTiming
     displaystartTime=datetime('15/7/2021','InputFormat','dd/MM/uuuu');
     displayendTime=datetime('15/11/2021','InputFormat','dd/MM/uuuu');    %% Effect of Timing
-    T = readtable('EffectOfTiming.csv');
+    T = readtable('../EffectOfTiming.csv');
     tiledlayout(3,1,'TileSpacing','tight')
     ax1=nexttile;
     plot(T.dates,T.detected,LineWidth=2);hold on;
@@ -239,7 +237,7 @@ if presentEffectOfTiming
     xlim([displaystartTime displayendTime]);
     ax = gca;ax.YRuler.Exponent = 0;
     xtickformat('dd-MM')
-    ytickformat('%,4.0g');ylim([0 215]);
+    ytickformat('%,4.0g');ylim([0 225]);
 
     ylabel('Number of cases')
     title('Daily number of new severe cases','fontsize',13)
@@ -263,11 +261,14 @@ if presentEffectOfTiming
     linkaxes([ax1,ax2,ax3],'x')
     set([ax1,ax2,ax3],'xtick',displaystartTime+[0 17 31 48 62 78 92 109],'xticklabelrotation',45);
 
-    printGraph('EffectOfTiming')
+    printGraph('../graphs/EffectOfTiming')
     
 end
 close all;
 if presentVaccineWaning
+    %% Present graph of vaccine waning using estimates of the Israeli Ministry of Health. 
+    %% These estimates weren't published elsewhere.  Full data required to produce the graph is 
+    %% avaliable in this code, and can be credited to Yair Goldberg, Technion.
     set(0, 'DefaultLineLineWidth', 1.5);
     subplot(2,1,1)
     tt=35+[240 210 180 150 120 90  60  30  0]+15;
@@ -275,8 +276,6 @@ if presentVaccineWaning
     yairNewJul=[nan nan 1.2 1.5 2 2.8 3.1 4.5 8.2];
     yairNewAug=[nan 1.2 1.4 1.7 2.2 2.5 3.8 6.5 6.8];
     yairNewSep=[1.5 1.5 1.7 2.2 2.5 3.8 5.4 6 8.7];
-
-    %     eff=linspace(93,53,5);
 
     plot(35+[0 30 30 60 60 90 90 120 120 150],[93 93 87 87 77 77 59 59 53 53],'k-','MarkerSize',10);hold on;
 
@@ -297,21 +296,30 @@ if presentVaccineWaning
     yair4059severe=[98 98 94];
     yair60severe=[91 88 86];
 
-    h=plot(ts,yair4059severe,'s','linewidth',1.5,color=blue);hold on;
+    % Compute vaccine efficacy in prevent severe outcomes, VE_S(t), using 
+    % the formula 1-VE_S(t)/100=(1-VE_I(t))*(1-VE_S(t*))/(1-VE_I(t*))
+    % Here VE_I(t)=0.97*(1-t/300), t*=150,
     t=(0:300);
-    hold on;plot(35+t,100-0.025*t,'--',color=gray)
+    VE_S_tstar=mean(yair4059severe)/100;
+    VE_S4059=1-(1-VE_S_tstar)*(0.03+0.97/300*t)/(1-0.485);
+
+    VE_S_tstar=mean(yair60severe)/100;
+    VE_S60=1-(1-VE_S_tstar)*(0.03+0.97/300*t)/(1-0.485);
+
+    h=plot(ts,yair4059severe,'s','linewidth',1.5,color=blue);hold on;
+    hold on;plot(35+t,100*VE_S4059,'--',color=gray)
 
     h=plot(ts,yair60severe,'d','linewidth',1.5,color=red);hold on;
-    hold on;plot(35+t,100-0.078*t,color='k')
+    hold on;plot(35+t,100*VE_S60,color='k')
 
-    legend('40-59','Best fitted curve to 40-59','60+','Best fitted curve to 60+','autoupdate','off','location','best')
-    ylim([80 100]);ylabel('Vaccine efficacy');xlabel('s')
+    legend('40-59','Compute curve for 40-59','60+','Compute curve for 60+','autoupdate','off','location','best')
+    ylim([80 100]);ylabel('Vaccine efficacy');xlabel('days since vaccination (s)')
     xlim([0 210+35])
     set(gca,'xtick',[0 35 100:50:300]);ytickformat('percentage');ylim([75 100])
     shg
     text(0.05,0.9,'B','units','normalized','FontSize',12)
     title('Vaccine efficacy profile in preventing severe outcomes')
-    printGraph('VE');
+    printGraph('../graphs/VE');
 end
 close all;
 if presentVEprofile
@@ -320,7 +328,7 @@ if presentVEprofile
     subplot(2,2,1);
 
     plot(t,100*VEv)
-    xlabel('s');ylabel('VE_v(s)       ','rotation',0);xlim([0 365]);ylim([0 100])
+    xlabel('days since vaccination (s)');ylabel('VE_v(s)       ','rotation',0);xlim([0 365]);ylim([0 100])
     title({'Vaccine efficacy profile','after first dose vaccination'})
     grid on
     set(gca,'xtick',[0 35 100:50:300])
@@ -337,6 +345,7 @@ if presentVEprofile
     set(gca,'xtick',[0 35 100:50:300])
     xlim([0 120])
 
-    printGraph('RelativeSusceptibilityProfile')
+    printGraph('../graphs/RelativeSusceptibilityProfile')
 end
+close all;
 return
