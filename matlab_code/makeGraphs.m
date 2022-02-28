@@ -1,4 +1,7 @@
 %% This script produces the graphs
+
+outputDir='../graphs/' % Output directory 
+[status,msg]=mkdir(outputDir);
 close all;
 defineColors;
 pBoostColor=green;
@@ -69,7 +72,7 @@ if presentCalibratedModel
     title(ax3,'Vaccinated with booster','FontWeight','normal','fontsize',12);%title(ax6,'Vaccinated with booster','FontWeight','normal','fontsize',12)
 
     set(gcf,'Position',[520 402 873 320])
-    printGraph(['../graphs/CalibratedModel',datestr(endTimeCalibration)])
+    printGraph([outputDir,'CalibratedModel',datestr(endTimeCalibration)])
 end
 close all;
 %% presentBoosterSchedule
@@ -102,7 +105,7 @@ if presentBoosterSchedule
     ylabel('Portion of vaccinated who received a booster shot')
     set(gcf,'Position',[520 318 768 479])
 
-    printGraph('../graphs/BoostSchedule')
+    printGraph([outputDir,'BoostSchedule'])
 end
 close all;
 %% presentEffectOfBoost
@@ -207,7 +210,7 @@ if presentEffectOfBoost
     grid on
     shg
 
-    printGraph('../graphs/EffectOfBoost');
+    printGraph([outputDir,'EffectOfBoost']);
 
     close
     colororder('default')
@@ -261,7 +264,7 @@ if presentEffectOfTiming
     linkaxes([ax1,ax2,ax3],'x')
     set([ax1,ax2,ax3],'xtick',displaystartTime+[0 17 31 48 62 78 92 109],'xticklabelrotation',45);
 
-    printGraph('../graphs/EffectOfTiming')
+    printGraph([outputDir,'EffectOfTiming'])
     
 end
 close all;
@@ -319,7 +322,7 @@ if presentVaccineWaning
     shg
     text(0.05,0.9,'B','units','normalized','FontSize',12)
     title('Vaccine efficacy profile in preventing severe outcomes')
-    printGraph('../graphs/VE');
+    printGraph([outputDir,'VE']);
 end
 close all;
 if presentVEprofile
@@ -345,7 +348,7 @@ if presentVEprofile
     set(gca,'xtick',[0 35 100:50:300])
     xlim([0 120])
 
-    printGraph('../graphs/RelativeSusceptibilityProfile')
+    printGraph([outputDir,'RelativeSusceptibilityProfile'])
 end
 close all;
 return
